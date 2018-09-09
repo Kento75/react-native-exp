@@ -10,12 +10,25 @@ import {
   TextInput,
   Button,
   KeyboardAvoidingView,
+  TouchableOpacity,
   AsyncStorage,
 } from 'react-native';
 
 const STATUSBAR_HEIGHT = Platform.OS == "ios" ? 20 : StatusBar.currentHeight;
 
 const TODO = "@todoapp.todo";
+
+const todoItem = (props) => {
+  let textStyle = styles.todoItem;
+  if (props.done === true) {
+    textStyle = styles.todoItemDone;
+  }
+  return (
+    <TouchableOpacity onPress={props.ontapTodoItem}>
+      <Text style={textStyle}>{props.title}</Text>
+    </TouchableOpacity>
+  )
+}
 
 export default class App extends React.Component {
 
@@ -72,6 +85,15 @@ export default class App extends React.Component {
     this.saveTodo(todo);
   }
 
+  ontapTodoItem = (todoItem) => {
+    const todo = this.state.todo;
+    const index = todo.indexOf(todoItem);
+    todoItem.done = !todoItem.done;
+    todo[index] = todoItem;
+    this.setState({todo: todo});
+    this.saveTodo(todo);
+  }
+
   render() {
 
     const filterText = this.state.filterText;
@@ -91,8 +113,16 @@ export default class App extends React.Component {
           />
         </View>
         <ScrollView style={styles.todolist}>
-          <FlatList data={todo}
-            renderItem={({item}) => <Text>{item.title}</Text>}
+          <FlatList
+            data={todo}
+            extraData={this.state}
+            renderItem={({item}) =>
+              <TodoItem
+                title={item.title}
+                done={item.done}
+                ontapTodoItem={() => this.ontapTodoItem(item)}
+              />
+            }
             keyExtractor={(item, index) => "todo_" + item.index}
           />
         </ScrollView>
@@ -101,6 +131,7 @@ export default class App extends React.Component {
             onChangeText={(text) => this.setState({inputText: text})}
             value={this.state.inputText}
             style={styles.inputText}
+            placeholder="Type your todo"
           />
           <Button
             onPress={this.onAddItem}
@@ -122,6 +153,7 @@ const styles = StyleSheet.create({
   },
   filter: {
     height: 30,
+    flexDirection: "row",
   },
   todolist: {
     flex: 1,
@@ -132,8 +164,20 @@ const styles = StyleSheet.create({
   },
   inputText: {
     flex: 1,
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
   },
   inputButton: {
     width: 100,
-  }
+  },
+  todoItem: {
+    fontSize: 20,
+    backgroundColor: "white",
+  },
+  todoItemDone: {
+    fontSize: 20,
+    backgroundColor: "red",
+  },
 });
