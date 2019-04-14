@@ -3,41 +3,45 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   StatusBar,
   Platform,
+  ScrollView,
   FlatList,
   TextInput,
   Button,
   KeyboardAvoidingView,
-  TouchableOpacity,
   AsyncStorage,
+  TouchableOpacity,
 } from 'react-native';
 
-const STATUSBAR_HEIGHT = Platform.OS == "ios" ? 20 : StatusBar.currentHeight;
+// OSごとにステータスバーの高さを設定
+// iPhoneXRで設定
+const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 50 : StatusBar.currentHeight;
 
+// TODO key/value 定義
 const TODO = "@todoapp.todo";
 
-const todoItem = (props) => {
+const TodoItem = (props) => {
   let textStyle = styles.todoItem;
-  if (props.done === true) {
+  if(props.done === true) {
     textStyle = styles.todoItemDone;
   }
+
   return (
-    <TouchableOpacity onPress={props.ontapTodoItem}>
+    <TouchableOpacity onPress={props.onTapTodoItem}>
       <Text style={textStyle}>{props.title}</Text>
     </TouchableOpacity>
   )
 }
 
 export default class App extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
       todo: [],
       currentIndex: 0,
-      inputText: "",
+      inputText: '',
+      filterText: '',
     }
   }
 
@@ -45,6 +49,7 @@ export default class App extends React.Component {
     this.loadTodo();
   }
 
+  // TODOを読み込み
   loadTodo = async () => {
     try {
       const todoString = await AsyncStorage.getItem(TODO);
@@ -58,18 +63,20 @@ export default class App extends React.Component {
     }
   }
 
+  // TODOを Storageへ保存
   saveTodo = async (todo) => {
     try {
-      const todoString = JSON.stringify(todo);
+      const todoString = JSON.parse(todo);
       await AsyncStorage.setItem(TODO, todoString);
     } catch(e) {
-      console.log(e)
+      console.log(e);
     }
   }
 
+  // TODOリストへの追加処理
   onAddItem = () => {
-    const title = this.state.inputText;
-    if (title === "") {
+    const title = this.state.inputText
+    if(title == "") {
       return;
     }
     const index = this.state.currentIndex + 1;
@@ -78,50 +85,46 @@ export default class App extends React.Component {
     this.setState({
       todo: todo,
       currentIndex: index,
-      inputText: "",
-      filterText: "",
-    });
-
+      inputText: ""
+    })
+    // Storageにも保存
     this.saveTodo(todo);
   }
 
-  ontapTodoItem = (todoItem) => {
+  // TODOリストタップ時
+  onTapTodoItem = (todoItem) => {
     const todo = this.state.todo;
     const index = todo.indexOf(todoItem);
     todoItem.done = !todoItem.done;
     todo[index] = todoItem;
-    this.setState({todo: todo});
+    this.setState({
+      todo: todo
+    });
     this.saveTodo(todo);
   }
 
   render() {
-
     const filterText = this.state.filterText;
     let todo = this.state.todo;
-    if (filterText !== "") {
+    if(filterText !== '') {
       todo = todo.filter(t => t.title.includes(filterText));
     }
 
     return (
-      <KeyboardAvoidingView style={styles.container} behavior="padding">
+      <KeyboardAvoidingView behavior="padding" style={styles.container}>
         <View style={styles.filter}>
           <TextInput
             onChangeText={(text) => this.setState({filterText: text})}
-            value={this.state.filterText}
             style={styles.inputText}
+            value={this.state.filterText}
             placeholder="Type filter text"
           />
         </View>
         <ScrollView style={styles.todolist}>
-          <FlatList
-            data={todo}
+          <FlatList data={todo}
             extraData={this.state}
             renderItem={({item}) =>
-              <TodoItem
-                title={item.title}
-                done={item.done}
-                ontapTodoItem={() => this.ontapTodoItem(item)}
-              />
+              <TodoItem title={item.title} done={item.done} onTapTodoItem={() => this.onTapTodoItem(item)} />
             }
             keyExtractor={(item, index) => "todo_" + item.index}
           />
@@ -131,7 +134,7 @@ export default class App extends React.Component {
             onChangeText={(text) => this.setState({inputText: text})}
             value={this.state.inputText}
             style={styles.inputText}
-            placeholder="Type your todo"
+            placeholder="type your todo"
           />
           <Button
             onPress={this.onAddItem}
@@ -148,36 +151,33 @@ export default class App extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginLeft: 10,
     backgroundColor: '#fff',
-    paddingTop: STATUSBAR_HEIGHT
+    paddingTop: STATUSBAR_HEIGHT,
   },
   filter: {
     height: 30,
-    flexDirection: "row",
   },
   todolist: {
     flex: 1,
   },
   input: {
     height: 30,
-    flexDirection: "row",
+    marginBottom: 20,
+    flexDirection: 'row',
   },
   inputText: {
     flex: 1,
-    borderBottomWidth: 1,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
   },
   inputButton: {
     width: 100,
   },
   todoItem: {
     fontSize: 20,
-    backgroundColor: "white",
+    backgroundColor: 'white',
   },
   todoItemDone: {
     fontSize: 20,
-    backgroundColor: "red",
-  },
+    backgroundColor: 'red',
+  }
 });
